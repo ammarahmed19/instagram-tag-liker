@@ -78,6 +78,8 @@ while True:
 		insta_api.like(media_ids[accum])
 		accum += 1
 		print("liked photo with media id", media_ids[accum])
+	else:
+		continue
 
 	sleep(args.interval * 60)
 	print(f"Sleeping for {args.interval} minutes")
