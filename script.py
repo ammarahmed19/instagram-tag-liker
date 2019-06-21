@@ -71,13 +71,14 @@ media_ids = get_media_ids(url)
 while True:
 	for i in range(args.post_count):
 		if accum >= len(media_ids):
+			print (len(media_ids))
 			accum = 0
 			media_ids = get_media_ids(url)
 			break
 
 		insta_api.like(media_ids[accum])
-		accum += 1
 		print("liked photo with media id", media_ids[accum])
+		accum += 1
 	else:
 		continue
 
