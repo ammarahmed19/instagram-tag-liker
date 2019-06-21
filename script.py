@@ -3,6 +3,7 @@ import requests
 import argparse
 from time import sleep
 from InstagramAPI import InstagramAPI
+import os, os.path
 
 # Functions
 def mpath(fpath):
@@ -64,20 +65,57 @@ else:
 	print ("ERROR: Failed to login to Instagram, please make sure you've used the correct username and password and that the connection is not faulty as well.")
 	exit(1)
 
+# json
+
+def SetupJson():
+	try:
+		with open(mpath('posted.json'), 'r', encoding='utf8') as f:
+			pass
+	except FileNotFoundError:
+		with open(mpath('posted.json'), 'w', encoding='utf-8') as f:
+			data = {'posted':[]}
+			json.dump(data, f, indent=4)
+
+def AddPostToPosted(postlink):
+	with open(mpath('posted.json'), 'r+', encoding='utf-8') as f:
+		data = json.load(f)
+		data['posted'].append(postlink)
+		f.seek(0)
+		f.truncate()
+		json.dump(data, f, indent=4)
+
+def CheckIfPosted(postlink):
+	try:
+		with open(mpath('posted.json'), 'r', encoding='utf-8') as f:
+			data = json.load(f)
+			if postlink in data['posted']:
+				#
+				return True
+			else:
+				#
+				return False
+	except:
+		print("error in CheckIfPosted")
+
 # Application
 accum = 0
 media_ids = get_media_ids(url)
+SetupJson()
 
 while True:
 	for i in range(args.post_count):
 		if accum >= len(media_ids):
 			print (len(media_ids))
 			accum = 0
+			sleep(args.interval * 60)
 			media_ids = get_media_ids(url)
 			break
-
-		insta_api.like(media_ids[accum])
-		print("liked photo with media id", media_ids[accum])
+		if CheckIfPosted(media_ids[accum]):
+			insta_api.like(media_ids[accum])
+			AddPostToPosted(media_ids[accum])
+			print("liked photo with media id", media_ids[accum])
+		else:
+			print("photo with media id", media_ids[accum], "already liked. skipping")
 		accum += 1
 	else:
 		continue
