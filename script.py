@@ -12,16 +12,14 @@ def mpath(fpath):
 
 # Arugments
 
-parser = argparse.ArgumentParser(description='Like X posts every Y minutes from hashtag')
+"""parser = argparse.ArgumentParser(description='Like X posts every Y minutes from hashtag')
 parser.add_argument('hashtag', metavar='H', type=str, help='The hashtag that will be scraped')
 parser.add_argument('post_count', metavar='X', type=int, help='The number of posts, X, that will be liked every Y minutes')
 parser.add_argument('interval', metavar='Y', type=int, help='The interval, the every amount of minutes, Y, X posts will be liked')
 parser.add_argument('username', metavar='U', type=str, help='The username of the account that will like the posts')
 parser.add_argument('password', metavar='P', type=str, help='The password of the account that will like the posts')
 
-args = parser.parse_args()
-
-url = f"https://www.instagram.com/explore/tags/{args.hashtag}/?__a=1"
+args = parser.parse_args()"""
 
 
 # Data grabbing
@@ -56,14 +54,39 @@ def get_media_ids(url):
 	media_ids = [m['node']['id'] for m in ig_data_dict['graphql']['hashtag']['edge_hashtag_to_media']['edges']]
 	return media_ids
 
-# login to instagram
-print ("logging in to instagram")
-insta_api = InstagramAPI(args.username, args.password)
-if (insta_api.login()):
-	print ("login successful")
-else:
-	print ("ERROR: Failed to login to Instagram, please make sure you've used the correct username and password and that the connection is not faulty as well.")
-	exit(1)
+# config
+def examineConfig(data):
+	assert data['interval'].strip().isdigit(), "interval must be numbers only, decimals and letters are not accepted"
+	assert data['post_count'].strip().isdigit(), "interval must be numbers only, decimals and letters are not accepted"
+	assert len(data['hashtag'].strip()) > 0, "subreddit cannot be empty"
+	assert len(data['instagram_username'].strip()) > 0, "instagram username cannot be empty"
+	assert len(data['instagram_password'].strip()) >= 8, "instagram_password cannot be less than 8 characters"
+
+def loadConfig():
+	try:
+		with open(mpath('config.json'), 'r') as f:
+			data = json.load(f)
+			examineConfig(data)
+			print("config.json loaded successfully!")
+
+	except FileNotFoundError:
+		print("config.json not found, creating new settings file.")
+
+		with open(mpath('config.json'), 'w') as f:
+			data = {'hashtag':'ADD YOUR PREFERRED HASHTAG',
+					'post_count': 'THE NUMBER OF POSTS, X, THAT WILL BE LIKED EVERY Y MINUTES',
+					'interval': 'THE INTERVAL, THE EVERY AMOUNT OF MINUTES, Y, X POSTS WILL BE LIKED',
+					'instagram_username': 'ADD YOUR INSTAGRAM USERNAME HERE',
+					'instagram_password': 'ADD YOUR INSTAGRAM PASSWORD HERE',
+					}
+			json.dump(data, f, indent=4)
+
+		print("config.json successfully created, please edit config.json with correct configuration and run the script again")
+
+		exit(1)
+
+	return (data['hashtag'].strip(), int(data['post_count'].strip()), 
+		int(data['interval'].strip()), data['instagram_username'].strip(), data['instagram_password'].strip())
 
 # json
 
@@ -97,17 +120,30 @@ def CheckIfPosted(postlink):
 	except:
 		print("error in CheckIfPosted")
 
+# load config
+hashtag, post_count, interval, instagram_username, instagram_password = loadConfig()
+
 # Application
 accum = 0
+url = f"https://www.instagram.com/explore/tags/{hashtag}/?__a=1"
 media_ids = get_media_ids(url)
 SetupJson()
 
+# login to instagram
+print ("logging in to instagram")
+insta_api = InstagramAPI(instagram_username, instagram_password)
+if (insta_api.login()):
+	print ("login successful")
+else:
+	print ("ERROR: Failed to login to Instagram, please make sure you've used the correct username and password and that the connection is not faulty as well.")
+	exit(1)
+
 while True:
-	for i in range(args.post_count):
+	for i in range(post_count):
 		if accum >= len(media_ids):
 			print (len(media_ids))
 			accum = 0
-			sleep(args.interval * 60)
+			sleep(interval * 60)
 			media_ids = get_media_ids(url)
 			break
 		if CheckIfPosted(media_ids[accum]):
@@ -120,5 +156,5 @@ while True:
 	else:
 		continue
 
-	sleep(args.interval * 60)
-	print(f"Sleeping for {args.interval} minutes")
+	sleep(interval * 60)
+	print(f"Sleeping for {interval} minutes")
