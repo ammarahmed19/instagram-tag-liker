@@ -29,9 +29,9 @@ def jdump(fname, data_dict):
 		json.dump(data_dict, f, indent=4)
 
 def get_ig_page(url, session=None):
-	print(url)
-	session = session or requests.Session()
-	r = session.get(url)
+	#print(url)
+	#session = session or requests.Session()
+	r = requests.get(url)
 	r_code = r.status_code
 
 	if r_code == 200:
@@ -47,11 +47,17 @@ def get_media_ids(url):
 	if ig_data_dict is not None:
 		ig_data_dict = ig_data_dict.json()
 		#jdump(mpath('posts.json'), ig_data_dict)
-		print("Retrieving media ids from url", url)
+		#print("Retrieving media ids from url", url)
 	else:
 		print("Oops something went wrong")
 
-	media_ids = [m['node']['id'] for m in ig_data_dict['graphql']['hashtag']['edge_hashtag_to_media']['edges']]
+
+	try:
+		media_ids = [m['node']['id'] for m in ig_data_dict['graphql']['hashtag']['edge_hashtag_to_media']['edges']]
+	except:
+		print ("ALERT: API RETURNED A NONE TYPE, RELOADING API AFTER 2 MINUTES")
+		sleep(120)
+		get_media_ids(url)
 	return media_ids
 
 # config
@@ -141,17 +147,17 @@ else:
 while True:
 	for i in range(post_count):
 		if accum >= len(media_ids):
-			print (len(media_ids))
+			#print (len(media_ids))
 			accum = 0
 			sleep(interval * 60)
 			media_ids = get_media_ids(url)
 			break
-		if CheckIfPosted(media_ids[accum]):
+		if not CheckIfPosted(media_ids[accum]):
 			insta_api.like(media_ids[accum])
 			AddPostToPosted(media_ids[accum])
 			print("liked photo with media id", media_ids[accum])
-		else:
-			print("photo with media id", media_ids[accum], "already liked. skipping")
+		#else:
+			# print("photo with media id", media_ids[accum], "already liked. skipping")
 		accum += 1
 	else:
 		continue
