@@ -40,24 +40,24 @@ def get_ig_page(url, session=None):
 	else:
 		return None
 
+def get_media_ids():
+	while True:
+		ig_data_dict = get_ig_page(url)
 
-def get_media_ids(url):
-	ig_data_dict = get_ig_page(url)
-
-	if ig_data_dict is not None:
-		ig_data_dict = ig_data_dict.json()
-		#jdump(mpath('posts.json'), ig_data_dict)
-		#print("Retrieving media ids from url", url)
-	else:
-		print("Oops something went wrong")
+		if ig_data_dict is not None:
+			ig_data_dict = ig_data_dict.json()
+			#jdump(mpath('posts.json'), ig_data_dict)
+			#print("Retrieving media ids from url", url)
+		else:
+			print("Oops something went wrong")
 
 
-	try:
-		media_ids = [m['node']['id'] for m in ig_data_dict['graphql']['hashtag']['edge_hashtag_to_media']['edges']]
-	except:
-		print ("ALERT: API RETURNED A NONE TYPE, RELOADING API AFTER 2 MINUTES")
-		sleep(120)
-		get_media_ids(url)
+		try:
+			media_ids = [m['node']['id'] for m in ig_data_dict['graphql']['hashtag']['edge_hashtag_to_media']['edges']]
+			break
+		except:
+			print ("ALERT: API RETURNED A NONE TYPE, RELOADING API AFTER 2 MINUTES")
+			sleep(120)
 	return media_ids
 
 # config
@@ -134,6 +134,7 @@ accum = 0
 url = f"https://www.instagram.com/explore/tags/{hashtag}/?__a=1"
 media_ids = get_media_ids(url)
 SetupJson()
+picposted = False
 
 # login to instagram
 print ("logging in to instagram")
@@ -155,6 +156,7 @@ while True:
 		if not CheckIfPosted(media_ids[accum]):
 			insta_api.like(media_ids[accum])
 			AddPostToPosted(media_ids[accum])
+			picposted = True
 			print("liked photo with media id", media_ids[accum])
 		#else:
 			# print("photo with media id", media_ids[accum], "already liked. skipping")
@@ -162,5 +164,8 @@ while True:
 	else:
 		continue
 
+	if not picposted:
+		print ("the photos in the current loop are all liked.")
+	picposted = False
 	sleep(interval * 60)
 	print(f"Sleeping for {interval} minutes")
