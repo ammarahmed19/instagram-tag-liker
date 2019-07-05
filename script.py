@@ -40,7 +40,7 @@ def get_ig_page(url, session=None):
 	else:
 		return None
 
-def get_media_ids():
+def get_media_ids(url):
 	while True:
 		ig_data_dict = get_ig_page(url)
 
