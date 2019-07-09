@@ -144,28 +144,37 @@ if (insta_api.login()):
 else:
 	print ("ERROR: Failed to login to Instagram, please make sure you've used the correct username and password and that the connection is not faulty as well.")
 	exit(1)
-
+print("post_count:", post_count)
+print("interval:", interval)
+photos_liked = 0
 while True:
 	for i in range(post_count):
+		#print(f"loop:{i}/{post_count}")
 		if accum >= len(media_ids):
 			#print (len(media_ids))
+			print("REFRESHING POSTS")
 			accum = 0
 			sleep(interval * 60)
 			media_ids = get_media_ids(url)
 			break
+		if photos_liked >= post_count:
+			print("10 photos liked sleeping")
+			break
 		if not CheckIfPosted(media_ids[accum]):
 			insta_api.like(media_ids[accum])
+			photos_liked += 1
 			AddPostToPosted(media_ids[accum])
 			picposted = True
 			print("liked photo with media id", media_ids[accum])
 		#else:
-			# print("photo with media id", media_ids[accum], "already liked. skipping")
+			#print("photo with media id", media_ids[accum], "already liked. skipping")
 		accum += 1
-	else:
-		continue
 
 	if not picposted:
 		print ("the photos in the current loop are all liked.")
 	picposted = False
-	sleep(interval * 60)
-	print(f"Sleeping for {interval} minutes")
+
+	if photos_liked >= post_count:
+		sleep(interval * 60)
+		print(f"Sleeping for {interval} minutes")
+		photos_liked = 0
