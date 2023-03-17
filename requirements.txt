@@ -1,2 +1,2 @@
-requests==2.22.0
+requests==2.28.2
 InstagramAPI==1.0.2
